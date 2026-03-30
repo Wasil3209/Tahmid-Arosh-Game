@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Tahmid & Arosh: Eternal Horizons</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Press Start 2P', system-ui;
+            touch-action: none;
+        }
+        canvas { display: block; }
+        
+        #ui {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 24px;
+            text-shadow: 0 0 10px #ff0;
+            pointer-events: none;
+        }
+        #hero-name {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #0ff;
+            font-size: 18px;
+            text-shadow: 0 0 10px #0ff;
+            pointer-events: none;
+        }
+        
+        /* Mobile controls */
+        #mobile-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            display: none;
+            pointer-events: auto;
+        }
+        #joystick-base {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.2);
+            border: 4px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            position: relative;
+        }
+        #joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px #0ff;
+        }
+        
+        #action-buttons {
+            position: absolute;
+            bottom: 40px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            flex-direction: column;
+        }
+        .btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255,255,255,0.2);
+            border: 4px solid #0ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+            text-shadow: 0 0 10px #0ff;
+            box-shadow: 0 0 20px #0ff;
+        }
+        
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, #112233, #001122);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #0ff;
+            text-align: center;
+            z-index: 200;
+        }
+        #start-screen h1 {
+            font-size: 42px;
+            margin: 0 0 20px 0;
+            text-shadow: 0 0 30px #0ff;
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow { from { text-shadow: 0 0 20px #0ff; } to { text-shadow: 0 0 40px #0ff; } }
+        
+        #instructions {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 14px;
+            background: rgba(0,0,0,0.6);
+            padding: 12px 24px;
+            border-radius: 30px;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="ui">
+        <div id="score">ORBS: <span id="score-value">0</span></div>
+        <div id="hero-name">CONTROLLING: <span id="hero-name-value" style="color:#ff8800;">TAHMID</span></div>
+        
+        <!-- Mobile controls -->
+        <div id="mobile-controls">
+            <div id="joystick-base">
+                <div id="joystick-knob"></div>
+            </div>
+        </div>
+        
+        <div id="action-buttons">
+            <div class="btn" id="jump-btn">JUMP</div>
+            <div class="btn" id="switch-btn">SWITCH HERO</div>
+        </div>
+        
+        <div id="instructions">WASD / Arrows = Move • Mouse = Look • SPACE = Jump • E = Switch Hero</div>
+    </div>
+    
+    <!-- Start screen -->
+    <div id="start-screen">
+        <h1>TAHMID &amp; AROSH</h1>
+        <h2 style="margin:10px 0 30px; font-size:22px; color:#ff0;">ETERNAL HORIZONS</h2>
+        <p style="max-width:420px; font-size:14px; line-height:1.6; color:#aaa;">
+            Endless open world • Two heroes • Never-ending adventure<br>
+            Collect glowing orbs • Explore infinite hills &amp; forests
+        </p>
+        <div onclick="startGame()" 
+             style="margin-top:40px; padding:20px 50px; background:#0ff; color:#000; font-size:22px; border-radius:50px; cursor:pointer; box-shadow:0 0 30px #0ff;">
+            START ADVENTURE
+        </div>
+        <div style="margin-top:60px; font-size:12px; color:#666;">
+            Works on laptop, Android &amp; iOS • No download needed
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script>
+        // ============== BASIC SETUP ==============
+        let scene, camera, renderer;
+        let playerTahmid, playerArosh, activePlayer, companionPlayer;
+        let velocity = new THREE.Vector3();
+        let moveDirection = new THREE.Vector3();
+        let keys = {};
+        let score = 0;
+        let orbs = [];
+        let trees = [];
+        let isJumping = false;
+        let gravity = -0.008;
+        let jumpSpeed = 0.25;
+        
+        // Simple 2D noise for terrain (seeded)
+        function noise(x, z) {
+            let n = Math.sin(x * 0.1) * 12 + Math.cos(z * 0.1) * 12;
+            n += Math.sin(x * 0.3 + z * 0.3) * 4;
+            return n * 0.8;
+        }
+        
+        function createTree(x, z) {
+            const group = new THREE.Group();
+            
+            // Trunk
+            const trunkGeo = new THREE.CylinderGeometry(3, 4, 25, 8);
+            const trunkMat = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 12.5;
+            group.add(trunk);
+            
+            // Foliage
+            const foliageGeo = new THREE.ConeGeometry(18, 35, 8);
+            const foliageMat = new THREE.MeshPhongMaterial({ color: 0x00aa33 });
+            const foliage1 = new THREE.Mesh(foliageGeo, foliageMat);
+            foliage1.position.y = 35;
+            group.add(foliage1);
+            
+            const foliage2 = foliage1.clone();
+            foliage2.scale.set(0.8, 0.8, 0.8);
+            foliage2.position.y = 48;
+            group.add(foliage2);
+            
+            group.position.set(x, noise(x, z) + 2, z);
+            return group;
+        }
+        
+        function createCharacter(isTahmid) {
+            const group = new THREE.Group();
+            
+            // Body
+            const bodyGeo = new THREE.CylinderGeometry(8, 8, 22, 16);
+            const bodyMat = new THREE.MeshPhongMaterial({ 
+                color: isTahmid ? 0xff8800 : 0x00aaff 
+            });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 18;
+            group.add(body);
+            
+            // Head
+            const headGeo = new THREE.SphereGeometry(10, 16, 16);
+            const headMat = new THREE.MeshPhongMaterial({ color: 0xffddaa });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 42;
+            group.add(head);
+            
+            // Hat / hair
+            const hatGeo = new THREE.ConeGeometry(12, 12, 16);
+            const hatMat = new THREE.MeshPhongMaterial({ 
+                color: isTahmid ? 0xff0000 : 0x8800ff 
+            });
+            const hat = new THREE.Mesh(hatGeo, hatMat);
+            hat.position.y = 50;
+            hat.rotation.x = Math.PI;
+            group.add(hat);
+            
+            // Simple arms
+            const armGeo = new THREE.BoxGeometry(6, 22, 6);
+            const armMat = new THREE.MeshPhongMaterial({ color: 0xffddaa });
+            const leftArm = new THREE.Mesh(armGeo, armMat);
+            leftArm.position.set(-12, 25, 0);
+            leftArm.rotation.z = 0.8;
+            group.add(leftArm);
+            
+            const rightArm = leftArm.clone();
+            rightArm.position.x = 12;
+            rightArm.rotation.z = -0.8;
+            group.add(rightArm);
+            
+            // Name tag (CSS will be used later)
+            group.userData = { name: isTahmid ? "TAHMID" : "AROSH" };
+            return group;
+        }
+        
+        function createOrb() {
+            const orb = new THREE.Mesh(
+                new THREE.SphereGeometry(6, 16, 16),
+                new THREE.MeshPhongMaterial({
+                    color: 0xffff00,
+                    emissive: 0xffff00,
+                    emissiveIntensity: 0.8,
+                    shininess: 100
+                })
+            );
+            orb.castShadow = true;
+            orb.receiveShadow = true;
+            return orb;
+        }
+        
+        function spawnOrb() {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 80 + Math.random() * 400;
+            const x = Math.cos(angle) * dist;
+            const z = Math.sin(angle) * dist;
+            
+            const orb = createOrb();
+            orb.position.set(x, noise(x, z) + 30 + Math.random() * 20, z);
+            scene.add(orb);
+            orbs.push(orb);
+            return orb;
+        }
+        
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x88aaff, 600, 1400);
+            
+            // Camera (third person)
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 2000);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('canvas'),
+                antialias: true 
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            
+            // Lights
+            const ambient = new THREE.AmbientLight(0x6688ff, 0.6);
+            scene.add(ambient);
+            
+            const sun = new THREE.DirectionalLight(0xffeecc, 1.2);
+            sun.position.set(300, 400, 200);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            scene.add(sun);
+            
+            // Sky color
+            scene.background = new THREE.Color(0x88aaff);
+            
+            // TERRAIN - huge plane with hills
+            const terrainSize = 2000;
+            const segments = 120;
+            const terrainGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, segments, segments);
+            terrainGeo.rotateX(-Math.PI / 2);
+            
+            const vertices = terrainGeo.attributes.position.array;
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                const z = vertices[i + 2];
+                vertices[i + 1] = noise(x, z); // height
+            }
+            terrainGeo.computeVertexNormals();
+            
+            const terrainMat = new THREE.MeshPhongMaterial({
+                color: 0x22aa44,
+                shininess: 2,
+                flatShading: true
+            });
+            const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+            terrain.receiveShadow = true;
+            scene.add(terrain);
+            
+            // Place trees
+            for (let i = 0; i < 280; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * 950;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist;
+                const tree = createTree(x, z);
+                scene.add(tree);
+                trees.push(tree);
+            }
+            
+            // Create heroes
+            playerTahmid = createCharacter(true);
+            playerTahmid.position.set(-20, 30, 0);
+            scene.add(playerTahmid);
+            
+            playerArosh = createCharacter(false);
+            playerArosh.position.set(20, 30, 0);
+            scene.add(playerArosh);
+            
+            // Start with Tahmid
+            activePlayer = playerTahmid;
+            companionPlayer = playerArosh;
+            
+            // Spawn initial orbs
+            for (let i = 0; i < 25; i++) {
+                spawnOrb();
+            }
+            
+            // Resize handler
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        
+        // ============== CONTROLS ==============
+        function handleKeyboard() {
+            moveDirection.set(0, 0, 0);
+            
+            const speed = 2.8;
+            
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) moveDirection.x -= speed;
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) moveDirection.x += speed;
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) moveDirection.z -= speed;
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) moveDirection.z += speed;
+            
+            if (moveDirection.length() > 0) {
+                moveDirection.normalize();
+                // Rotate player to face movement direction
+                activePlayer.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
+            }
+            
+            velocity.x = moveDirection.x;
+            velocity.z = moveDirection.z;
+            
+            // Jump
+            if ((keys[' '] || keys['Space']) && !isJumping) {
+                velocity.y = jumpSpeed;
+                isJumping = true;
+                keys[' '] = false; // prevent repeat
+            }
+        }
+        
+        // ============== TOUCH JOYSTICK ==============
+        let joystickActive = false;
+        let joystickTouchId = null;
+        let joystickBase = null;
+        let joystickKnob = null;
+        let joystickCenter = { x: 0, y: 0 };
+        
+        function initTouchControls() {
+            if (!('ontouchstart' in window)) return;
+            
+            document.getElementById('mobile-controls').style.display = 'block';
+            document.getElementById('instructions').style.display = 'none';
+            
+            joystickBase = document.getElementById('joystick-base');
+            joystickKnob = document.getElementById('joystick-knob');
+            
+            const rect = joystickBase.getBoundingClientRect();
+            joystickCenter = { x: rect.left + 60, y: rect.top + 60 };
+            
+            joystickBase.addEventListener('touchstart', e => {
+                if (joystickActive) return;
+                joystickTouchId = e.changedTouches[0].identifier;
+                joystickActive = true;
+            });
+            
+            window.addEventListener('touchmove', e => {
+                if (!joystickActive) return;
+                for (let t of e.changedTouches) {
+                    if (t.identifier === joystickTouchId) {
+                        let dx = t.clientX - joystickCenter.x;
+                        let dy = t.clientY - joystickCenter.y;
+                        const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 50);
+                        const angle = Math.atan2(dx, dy);
+                        
+                        joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+                        
+                        moveDirection.set(
+                            Math.sin(angle) * (dist / 50) * 2.8,
+                            0,
+                            Math.cos(angle) * (dist / 50) * 2.8
+                        );
+                        activePlayer.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
+                        velocity.x = moveDirection.x;
+                        velocity.z = moveDirection.z;
+                        return;
+                    }
+                }
+            });
+            
+            window.addEventListener('touchend', e => {
+                for (let t of e.changedTouches) {
+                    if (t.identifier === joystickTouchId) {
+                        joystickActive = false;
+                        joystickKnob.style.transform = 'translate(-50%, -50%)';
+                        velocity.x = 0;
+                        velocity.z = 0;
+                        joystickTouchId = null;
+                        return;
+                    }
+                }
+            });
+            
+            // Jump button
+            document.getElementById('jump-btn').addEventListener('touchstart', () => {
+                if (!isJumping) {
+                    velocity.y = jumpSpeed;
+                    isJumping = true;
+                }
+            });
+            
+            // Switch hero button
+            document.getElementById('switch-btn').addEventListener('touchstart', switchHero);
+        }
+        
+        function switchHero() {
+            // Swap active and companion
+            const temp = activePlayer;
+            activePlayer = companionPlayer;
+            companionPlayer = temp;
+            
+            // Slight position offset so they don't overlap
+            companionPlayer.position.x += (Math.random() - 0.5) * 15;
+            companionPlayer.position.z += (Math.random() - 0.5) * 15;
+            
+            // Update UI
+            const nameEl = document.getElementById('hero-name-value');
+            nameEl.textContent = activePlayer.userData.name;
+            nameEl.style.color = activePlayer.userData.name === "TAHMID" ? "#ff8800" : "#00aaff";
+        }
+        
+        // ============== GAME LOOP ==============
+        function updatePhysics() {
+            // Apply velocity
+            activePlayer.position.x += velocity.x;
+            activePlayer.position.z += velocity.z;
+            
+            // Gravity & jump
+            velocity.y += gravity;
+            activePlayer.position.y += velocity.y;
+            
+            // Ground collision using noise
+            const groundY = noise(activePlayer.position.x, activePlayer.position.z) + 22;
+            if (activePlayer.position.y <= groundY) {
+                activePlayer.position.y = groundY;
+                velocity.y = 0;
+                isJumping = false;
+            }
+            
+            // Companion follows (simple AI)
+            const dx = activePlayer.position.x - companionPlayer.position.x;
+            const dz = activePlayer.position.z - companionPlayer.position.z;
+            const distToLeader = Math.sqrt(dx*dx + dz*dz);
+            
+            if (distToLeader > 45) {
+                const followSpeed = 1.8;
+                companionPlayer.position.x += (dx / distToLeader) * followSpeed;
+                companionPlayer.position.z += (dz / distToLeader) * followSpeed;
+                companionPlayer.rotation.y = Math.atan2(dx, dz);
+            }
+            
+            // Keep companion on ground
+            const compGroundY = noise(companionPlayer.position.x, companionPlayer.position.z) + 22;
+            if (companionPlayer.position.y < compGroundY) companionPlayer.position.y = compGroundY;
+            
+            // Camera follow (smooth third person)
+            const idealOffset = new THREE.Vector3(0, 60, 110);
+            idealOffset.applyQuaternion(activePlayer.quaternion);
+            idealOffset.add(activePlayer.position);
+            
+            camera.position.lerp(idealOffset, 0.12);
+            camera.lookAt(activePlayer.position.x, activePlayer.position.y + 25, activePlayer.position.z);
+        }
+        
+        function checkCollisions() {
+            for (let i = orbs.length - 1; i >= 0; i--) {
+                const orb = orbs[i];
+                const dx = orb.position.x - activePlayer.position.x;
+                const dz = orb.position.z - activePlayer.position.z;
+                const dist = Math.sqrt(dx*dx + dz*dz);
+                
+                if (dist < 22) {
+                    score++;
+                    document.getElementById('score-value').textContent = score;
+                    
+                    // Remove collected orb
+                    scene.remove(orb);
+                    orbs.splice(i, 1);
+                    
+                    // Spawn new one far away (never-ending)
+                    spawnOrb();
+                }
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (!activePlayer) return;
+            
+            handleKeyboard();
+            updatePhysics();
+            checkCollisions();
+            
+            // Gentle bob on orbs
+            orbs.forEach((orb, i) => {
+                orb.position.y += Math.sin(Date.now() / 300 + i) * 0.3;
+                orb.rotation.y += 0.02;
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        // ============== START GAME ==============
+        window.startGame = function() {
+            document.getElementById('start-screen').style.display = 'none';
+            
+            initScene();
+            initTouchControls();
+            animate();
+            
+            // Keyboard listeners
+            window.addEventListener('keydown', e => { keys[e.key] = true; });
+            window.addEventListener('keyup', e => { keys[e.key] = false; });
+            
+            // Keyboard switch hero
+            window.addEventListener('keypress', e => {
+                if (e.key.toLowerCase() === 'e') switchHero();
+            });
+            
+            console.log('%c🎮 Tahmid & Arosh: Eternal Horizons is running!', 'color:#0ff; font-size:16px');
+        };
+        
+        // Auto-start hint
+        console.log('%c✅ Game ready! Click START ADVENTURE above.', 'color:#0ff');
+    </script>
+</body>
+</html>
