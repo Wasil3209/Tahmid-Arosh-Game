@@ -2,749 +2,283 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arosh Dash 🌈 • Tahmid is Chasing!</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tahmid & Arosh - 3D Runner Game</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&amp;display=swap');
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Fredoka', sans-serif;
+            margin: 0;
             overflow: hidden;
-            background: linear-gradient(180deg, #87CEEB 0%, #E0F7FA 100%);
-            color: white;
+            font-family: 'Arial', sans-serif;
+            touch-action: none;
         }
-        canvas { display: block; }
         
-        /* Eye-catching UI */
-        .ui-overlay {
+        #gameUI {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 10;
-        }
-        .top-bar {
-            position: absolute;
-            top: 15px;
-            left: 20px;
-            right: 20px;
+            top: 20px;
+            left: 0;
+            right: 0;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            background: rgba(255,255,255,0.25);
-            backdrop-filter: blur(12px);
-            border-radius: 9999px;
-            padding: 12px 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            font-size: 28px;
-            font-weight: 700;
-            text-shadow: 3px 3px 0 #FF00AA;
-        }
-        .score {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #FF00AA;
-        }
-        .score::before {
-            content: "🏃‍♂️";
-            font-size: 32px;
+            padding: 15px 20px;
+            z-index: 100;
+            pointer-events: none;
         }
         
-        .start-screen, .game-over-screen {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 20px;
-            pointer-events: all;
-        }
-        .title {
-            font-size: 82px;
-            font-weight: 700;
-            background: linear-gradient(90deg, #FF00AA, #00FFCC, #FFFF00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 40px rgba(255,0,170,0.8);
-            animation: bounce 1.5s infinite;
-        }
-        .subtitle {
-            font-size: 32px;
-            color: #FFFF00;
-            text-shadow: 0 0 20px #00FFCC;
-        }
-        .character-info {
-            display: flex;
-            gap: 60px;
-            margin: 20px 0;
-        }
-        .kid {
-            text-align: center;
-            font-size: 24px;
-        }
-        .kid .emoji {
-            font-size: 90px;
-            display: block;
-            animation: float 2s infinite ease-in-out;
-        }
-        button {
-            font-family: 'Fredoka', sans-serif;
-            font-size: 32px;
-            font-weight: 700;
-            padding: 18px 60px;
-            border: none;
-            border-radius: 9999px;
-            background: linear-gradient(45deg, #FF00AA, #00FFCC);
+        .score-panel {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 50px;
             color: white;
-            box-shadow: 0 15px 0 #CC0088;
+            font-weight: bold;
+            font-size: 20px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        .score-panel span {
+            color: #ffd700;
+            font-size: 28px;
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            font-size: 14px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .touch-buttons {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            display: none;
+            justify-content: center;
+            gap: 20px;
+            z-index: 200;
+            pointer-events: auto;
+        }
+        
+        .touch-btn {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            font-size: 28px;
+            padding: 15px 25px;
+            border-radius: 60px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.1s;
+            font-weight: bold;
+            touch-action: manipulation;
         }
-        button:active {
-            transform: translateY(4px);
-            box-shadow: 0 8px 0 #CC0088;
+        
+        .touch-btn:active {
+            transform: scale(0.95);
+            background: rgba(255,215,0,0.3);
         }
-        .game-over-screen h1 {
-            font-size: 68px;
-            color: #FF0066;
-            text-shadow: 0 0 30px #FF0000;
+        
+        @media (max-width: 768px) {
+            .touch-buttons {
+                display: flex;
+            }
+            .score-panel {
+                padding: 8px 16px;
+                font-size: 16px;
+            }
+            .score-panel span {
+                font-size: 22px;
+            }
         }
+        
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .gameover-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            animation: slideIn 0.5s ease;
+            max-width: 80%;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .gameover-card h1 {
+            color: #ffd700;
+            font-size: 48px;
+            margin: 0 0 20px 0;
+        }
+        
+        .gameover-card p {
+            color: white;
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        
+        .gameover-card button {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .gameover-card button:active {
+            transform: scale(0.95);
+        }
+        
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 1s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .start-card {
+            text-align: center;
+            color: white;
+            padding: 40px;
+        }
+        
+        .start-card h1 {
+            font-size: 64px;
+            margin: 0;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+            animation: bounce 1s infinite;
+        }
+        
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
+            50% { transform: translateY(-10px); }
         }
         
-        /* Power-up notification */
-        #powerup-text {
-            position: absolute;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 36px;
-            font-weight: 700;
-            color: #FFFF00;
-            text-shadow: 0 0 20px #00FFCC;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.4s;
+        .start-card h2 {
+            font-size: 32px;
+            margin: 20px 0;
+        }
+        
+        .start-card button {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 60px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: transform 0.2s;
+        }
+        
+        .start-card button:active {
+            transform: scale(0.95);
+        }
+        
+        .controls-demo {
+            margin-top: 30px;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
-    <canvas id="game"></canvas>
-
-    <!-- Top HUD -->
-    <div class="ui-overlay">
-        <div id="hud" class="top-bar" style="display: none;">
-            <div class="score" id="score">0 m</div>
-            <div style="font-size: 22px; color: #FFFF00;">ARO<span style="color:#00FFCC">SH</span> DASH 🌈</div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <span id="highscore">HI 000 m</span>
-                <span style="font-size: 32px;">🏃‍♂️</span>
-            </div>
+    <div id="gameUI">
+        <div class="score-panel">
+            🏃‍♂️ Distance: <span id="score">0</span>m
         </div>
-        <div id="powerup-text">SHIELD ACTIVATED! ✨</div>
+        <div class="score-panel">
+            ⚡ Speed: <span id="speed">1</span>x
+        </div>
     </div>
-
-    <!-- START SCREEN -->
-    <div id="start-screen" class="start-screen">
-        <div class="title">ARO<span style="color:#00FFCC;">SH</span> DASH</div>
-        <div class="subtitle">Run little Arosh! 🏃‍♂️ Tahmid is coming! 😠</div>
-        
-        <div class="character-info">
-            <!-- Arosh -->
-            <div class="kid">
-                <div class="emoji">👦</div>
-                <strong>Arosh</strong><br>
-                <span style="font-size:18px;">4 years old • Cute runner</span>
-            </div>
-            <!-- Tahmid -->
-            <div class="kid">
-                <div class="emoji" style="transform: scaleX(-1);">👦</div>
-                <strong>Tahmid</strong><br>
-                <span style="font-size:18px;">8 years old • Big brother chaser</span>
-            </div>
-        </div>
-
-        <button onclick="startGame()">🚀 START RUNNING!</button>
-        <p style="margin-top: 20px; font-size: 22px; opacity: 0.9;">
-            ← → or A D = change lane<br>
-            Arosh runs automatically • Collect stars for shield power-up!<br>
-            Avoid toys &amp; benches or Tahmid catches you!
-        </p>
+    
+    <div class="touch-buttons">
+        <button class="touch-btn" id="leftBtn">◀ LEFT</button>
+        <button class="touch-btn" id="rightBtn">RIGHT ▶</button>
+        <button class="touch-btn" id="jumpBtn">▲ JUMP</button>
+        <button class="touch-btn" id="slideBtn">▼ SLIDE</button>
     </div>
-
-    <!-- GAME OVER SCREEN -->
-    <div id="game-over-screen" class="game-over-screen" style="display: none;">
-        <h1>CAUGHT! 😭</h1>
-        <p style="font-size: 32px; margin-bottom: 10px;">Tahmid caught Arosh!</p>
-        <p id="final-score-text" style="font-size: 42px; color: #FFFF00;"></p>
-        
-        <div style="margin: 30px 0; font-size: 28px;">
-            Arosh hit an obstacle 💥<br>
-            Better luck next time, little guy!
+    
+    <div class="controls-info">
+        👆 SWIPE LEFT/RIGHT to move | SWIPE UP to JUMP | SWIPE DOWN to SLIDE
+    </div>
+    
+    <div id="startScreen">
+        <div class="start-card">
+            <h1>🏃‍♂️ TAHMID & AROSH 🏃‍♂️</h1>
+            <h2>Arosh is Running from Tahmid!</h2>
+            <p style="font-size: 20px;">Tahmid is chasing Arosh through the ancient temple!</p>
+            <button id="startBtn">🎮 START RUNNING 🎮</button>
+            <div class="controls-demo">
+                <p>📱 Swipe to Control | 💻 Arrow Keys</p>
+                <p>← → Move | ↑ Jump | ↓ Slide</p>
+            </div>
         </div>
-        
-        <button onclick="restartGame()">🔄 RUN AGAIN!</button>
-        
-        <div style="margin-top: 40px; display: flex; gap: 30px; font-size: 22px;">
-            <div>🏃‍♂️ Arosh • 4yo</div>
-            <div>👦 Tahmid • 8yo</div>
+    </div>
+    
+    <div id="gameOverScreen">
+        <div class="gameover-card">
+            <h1>🏆 GAME OVER 🏆</h1>
+            <p>Arosh was caught by Tahmid!</p>
+            <p>Distance: <span id="finalScore">0</span>m</p>
+            <p>Best: <span id="bestScore">0</span>m</p>
+            <button id="restartBtn">🔄 RUN AGAIN</button>
         </div>
     </div>
 
-    <script>
-        // =============== GAME VARIABLES ===============
-        let scene, camera, renderer;
-        let player, tahmid, shieldMesh;
-        let obstacles = [];
-        let coins = [];
-        let powerups = [];
-        let lanePositions = [-8, 0, 8];
-        let currentLane = 1;
-        let speed = 0.35;           // START SLOW & GENTLE
-        let score = 0;
-        let gameState = 'start';    // start | playing | over
-        let lastTime = 0;
-        let highScore = localStorage.getItem('aroshHighScore') || 0;
-        let shieldActive = false;
-        let shieldTimer = 0;
-        let magnetActive = false;
-        let magnetTimer = 0;
-        
-        const keys = {};
-        
-        // =============== CREATE CUTE AROSH (4yo) ===============
-        function createArosh() {
-            const group = new THREE.Group();
-            
-            // Body (blue shirt)
-            const body = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.8, 0.6, 1.8, 32),
-                new THREE.MeshPhongMaterial({ color: 0x00A8FF, shininess: 30 })
-            );
-            body.position.y = 1.8;
-            group.add(body);
-            
-            // Head
-            const head = new THREE.Mesh(
-                new THREE.SphereGeometry(0.9, 32, 32),
-                new THREE.MeshPhongMaterial({ color: 0xFFDBB4 })
-            );
-            head.position.y = 3.4;
-            group.add(head);
-            
-            // Hair
-            const hair = new THREE.Mesh(
-                new THREE.SphereGeometry(0.95, 32, 32),
-                new THREE.MeshPhongMaterial({ color: 0x2C2C2C })
-            );
-            hair.position.y = 3.4;
-            hair.scale.set(1, 0.6, 1);
-            group.add(hair);
-            
-            // Eyes
-            const eyeMat = new THREE.MeshPhongMaterial({ color: 0x111111 });
-            const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.22, 32, 32), eyeMat);
-            leftEye.position.set(-0.35, 3.55, 0.65);
-            group.add(leftEye);
-            const rightEye = leftEye.clone();
-            rightEye.position.x = 0.35;
-            group.add(rightEye);
-            
-            // Eye shines
-            const shineMat = new THREE.MeshPhongMaterial({ color: 0xFFFFFF });
-            const leftShine = new THREE.Mesh(new THREE.SphereGeometry(0.08, 32, 32), shineMat);
-            leftShine.position.set(-0.3, 3.6, 0.8);
-            group.add(leftShine);
-            const rightShine = leftShine.clone();
-            rightShine.position.x = 0.4;
-            group.add(rightShine);
-            
-            // Happy mouth
-            const mouth = new THREE.Mesh(
-                new THREE.TorusGeometry(0.3, 0.08, 16, 32, Math.PI),
-                new THREE.MeshPhongMaterial({ color: 0xFF3366 })
-            );
-            mouth.position.set(0, 3.1, 0.75);
-            mouth.rotation.x = Math.PI / 2;
-            group.add(mouth);
-            
-            // Arms
-            const armMat = new THREE.MeshPhongMaterial({ color: 0xFFDBB4 });
-            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 1.2, 32), armMat);
-            leftArm.position.set(-1.1, 2.2, 0);
-            leftArm.rotation.z = 0.8;
-            group.add(leftArm);
-            const rightArm = leftArm.clone();
-            rightArm.position.x = 1.1;
-            rightArm.rotation.z = -0.8;
-            group.add(rightArm);
-            
-            // Legs (shorts)
-            const legMat = new THREE.MeshPhongMaterial({ color: 0xFF6600 });
-            const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.4, 32), legMat);
-            leftLeg.position.set(-0.45, 0.8, 0);
-            group.add(leftLeg);
-            const rightLeg = leftLeg.clone();
-            rightLeg.position.x = 0.45;
-            group.add(rightLeg);
-            
-            group.scale.set(0.9, 0.9, 0.9);
-            group.castShadow = true;
-            return group;
-        }
-        
-        // =============== CREATE TAHMID (8yo chaser) ===============
-        function createTahmid() {
-            const group = new THREE.Group();
-            
-            const body = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.9, 0.7, 2.2, 32),
-                new THREE.MeshPhongMaterial({ color: 0xFF3333 })
-            );
-            body.position.y = 2.1;
-            group.add(body);
-            
-            const head = new THREE.Mesh(
-                new THREE.SphereGeometry(1.0, 32, 32),
-                new THREE.MeshPhongMaterial({ color: 0xFFDBB4 })
-            );
-            head.position.y = 4.1;
-            group.add(head);
-            
-            const browMat = new THREE.MeshPhongMaterial({ color: 0x111111 });
-            const leftBrow = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.1), browMat);
-            leftBrow.position.set(-0.4, 4.3, 0.7);
-            leftBrow.rotation.z = 0.3;
-            group.add(leftBrow);
-            const rightBrow = leftBrow.clone();
-            rightBrow.position.x = 0.4;
-            rightBrow.rotation.z = -0.3;
-            group.add(rightBrow);
-            
-            const eyeMat = new THREE.MeshPhongMaterial({ color: 0x111111 });
-            const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 32), eyeMat);
-            leftEye.position.set(-0.4, 4.1, 0.75);
-            group.add(leftEye);
-            const rightEye = leftEye.clone();
-            rightEye.position.x = 0.4;
-            group.add(rightEye);
-            
-            const armMat = new THREE.MeshPhongMaterial({ color: 0xFFDBB4 });
-            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.6, 32), armMat);
-            leftArm.position.set(-1.3, 2.6, 0);
-            leftArm.rotation.z = 1.2;
-            group.add(leftArm);
-            const rightArm = leftArm.clone();
-            rightArm.position.x = 1.3;
-            rightArm.rotation.z = -1.2;
-            group.add(rightArm);
-            
-            const legMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
-            const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.8, 32), legMat);
-            leftLeg.position.set(-0.5, 1.0, 0);
-            group.add(leftLeg);
-            const rightLeg = leftLeg.clone();
-            rightLeg.position.x = 0.5;
-            group.add(rightLeg);
-            
-            group.scale.set(1.1, 1.1, 1.1);
-            group.castShadow = true;
-            return group;
-        }
-        
-        // =============== CREATE OBSTACLE ===============
-        function createObstacle() {
-            const type = Math.random();
-            let mesh;
-            
-            if (type < 0.5) {
-                mesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(2.5, 2, 2.5),
-                    new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff })
-                );
-                mesh.position.y = 1;
-            } else {
-                mesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(4, 1.2, 2),
-                    new THREE.MeshPhongMaterial({ color: 0x8B4513 })
-                );
-                mesh.position.y = 0.6;
-            }
-            mesh.castShadow = true;
-            mesh.userData = { type: 'obstacle' };
-            return mesh;
-        }
-        
-        // =============== CREATE COIN ===============
-        function createCoin() {
-            const coin = new THREE.Mesh(
-                new THREE.TorusGeometry(0.8, 0.3, 16, 32),
-                new THREE.MeshPhongMaterial({ color: 0xFFDD00, emissive: 0xFFAA00, shininess: 100 })
-            );
-            coin.rotation.x = Math.PI / 2;
-            coin.userData = { type: 'coin', rotationSpeed: 0.05 };
-            return coin;
-        }
-        
-        // =============== CREATE POWER-UP (Shield Star) ===============
-        function createPowerUp() {
-            const power = new THREE.Mesh(
-                new THREE.OctahedronGeometry(1.2, 0),
-                new THREE.MeshPhongMaterial({ 
-                    color: 0xFFFF00, 
-                    emissive: 0xFF8800, 
-                    shininess: 100,
-                    transparent: true,
-                    opacity: 0.9
-                })
-            );
-            power.userData = { type: 'shield', rotationSpeed: 0.04 };
-            return power;
-        }
-        
-        // =============== INIT THREE.JS ===============
-        function init() {
-            const canvas = document.getElementById('game');
-            
-            scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x87CEEB, 30, 180);
-            
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 300);
-            camera.position.set(0, 12, 28);
-            
-            renderer = new THREE.WebGLRenderer({ 
-                canvas: canvas, 
-                antialias: true 
-            });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            
-            const ambient = new THREE.AmbientLight(0xFFFFFF, 0.7);
-            scene.add(ambient);
-            
-            const sun = new THREE.DirectionalLight(0xFFEECC, 1.2);
-            sun.position.set(30, 50, 30);
-            sun.castShadow = true;
-            scene.add(sun);
-            
-            // Road
-            const roadGeo = new THREE.PlaneGeometry(30, 400);
-            const roadMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
-            const road = new THREE.Mesh(roadGeo, roadMat);
-            road.rotation.x = -Math.PI / 2;
-            road.position.y = -0.1;
-            scene.add(road);
-            
-            // Lane lines
-            for (let i = -1; i <= 1; i++) {
-                const line = new THREE.Mesh(
-                    new THREE.PlaneGeometry(0.4, 400),
-                    new THREE.MeshPhongMaterial({ color: 0xFFFF00 })
-                );
-                line.rotation.x = -Math.PI / 2;
-                line.position.set(lanePositions[i + 1], 0.01, 0);
-                scene.add(line);
-            }
-            
-            // Colorful side trees
-            for (let i = 0; i < 25; i++) {
-                const tree = new THREE.Mesh(
-                    new THREE.CylinderGeometry(1.2, 2.5, 6, 5),
-                    new THREE.MeshPhongMaterial({ color: 0x00CC44 })
-                );
-                tree.position.set((i % 2 === 0 ? -18 : 18), 2.8, -80 + i * 18);
-                scene.add(tree);
-                
-                const top = new THREE.Mesh(
-                    new THREE.SphereGeometry(4, 6, 6),
-                    new THREE.MeshPhongMaterial({ color: 0x00FF66 })
-                );
-                top.position.set(tree.position.x, 7, tree.position.z);
-                scene.add(top);
-            }
-            
-            // Player Arosh
-            player = createArosh();
-            player.position.set(lanePositions[currentLane], 0, 0);
-            scene.add(player);
-            
-            // Shield mesh (hidden until activated)
-            shieldMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(2.8, 32, 32),
-                new THREE.MeshPhongMaterial({ 
-                    color: 0x00FFFF, 
-                    transparent: true, 
-                    opacity: 0.3,
-                    emissive: 0x00FFFF 
-                })
-            );
-            shieldMesh.visible = false;
-            player.add(shieldMesh); // attached to player
-            
-            // Tahmid
-            tahmid = createTahmid();
-            tahmid.position.set(0, 0, -42);
-            scene.add(tahmid);
-            
-            // Initial obstacles & coins
-            for (let i = 0; i < 6; i++) {
-                const obs = createObstacle();
-                obs.position.set(lanePositions[Math.floor(Math.random() * 3)], 0, -70 - i * 22);
-                scene.add(obs);
-                obstacles.push(obs);
-            }
-            
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-            
-            window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-            window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-        }
-        
-        // =============== START GAME ===============
-        function startGame() {
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('hud').style.display = 'flex';
-            gameState = 'playing';
-            score = 0;
-            speed = 0.35;
-            tahmid.position.z = -42;
-            shieldActive = false;
-            magnetActive = false;
-            shieldTimer = 0;
-            magnetTimer = 0;
-            lastTime = Date.now();
-            animate();
-        }
-        
-        function gameOver() {
-            gameState = 'over';
-            document.getElementById('hud').style.display = 'none';
-            document.getElementById('game-over-screen').style.display = 'flex';
-            document.getElementById('final-score-text').innerHTML = `You ran <span style="color:#FFFF00">${Math.floor(score)} m</span>!`;
-            
-            if (score > highScore) {
-                highScore = Math.floor(score);
-                localStorage.setItem('aroshHighScore', highScore);
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
             }
         }
-        
-        function restartGame() {
-            document.getElementById('game-over-screen').style.display = 'none';
-            
-            player.position.set(lanePositions[1], 0, 0);
-            currentLane = 1;
-            tahmid.position.z = -42;
-            score = 0;
-            speed = 0.35;
-            
-            obstacles.forEach(o => scene.remove(o));
-            obstacles = [];
-            for (let i = 0; i < 6; i++) {
-                const obs = createObstacle();
-                obs.position.set(lanePositions[Math.floor(Math.random() * 3)], 0, -70 - i * 22);
-                scene.add(obs);
-                obstacles.push(obs);
-            }
-            
-            coins.forEach(c => scene.remove(c));
-            coins = [];
-            powerups.forEach(p => scene.remove(p));
-            powerups = [];
-            
-            shieldActive = false;
-            magnetActive = false;
-            shieldMesh.visible = false;
-            
-            document.getElementById('hud').style.display = 'flex';
-            gameState = 'playing';
-            lastTime = Date.now();
-        }
-        
-        // =============== UPDATE PLAYER (ONLY LEFT / RIGHT) ===============
-        function updatePlayer(delta) {
-            // Lane change (very easy & instant)
-            if ((keys['arrowleft'] || keys['a']) && currentLane > 0) {
-                currentLane--;
-                keys['arrowleft'] = keys['a'] = false;
-                player.position.x = lanePositions[currentLane];
-            }
-            if ((keys['arrowright'] || keys['d']) && currentLane < 2) {
-                currentLane++;
-                keys['arrowright'] = keys['d'] = false;
-                player.position.x = lanePositions[currentLane];
-            }
-            
-            // Cute running bob (automatic)
-            player.position.y = Math.sin(Date.now() / 80) * 0.35;
-        }
-        
-        // =============== UPDATE TAHMID (slow chase) ===============
-        function updateTahmid(delta) {
-            const catchSpeed = speed * 0.68;   // Tahmid is slower than before
-            tahmid.position.z += catchSpeed;
-            tahmid.lookAt(player.position.x, 4, 0);
-            
-            if (tahmid.position.z > player.position.z - 5) {
-                gameOver();
-            }
-        }
-        
-        // =============== UPDATE OBSTACLES, COINS, POWER-UPS ===============
-        function updateWorld(delta) {
-            // Obstacles
-            for (let i = 0; i < obstacles.length; i++) {
-                const o = obstacles[i];
-                o.position.z += speed * 26;
-                
-                // Collision
-                if (!shieldActive &&
-                    Math.abs(o.position.x - player.position.x) < 2.6 &&
-                    Math.abs(o.position.z - player.position.z) < 3) {
-                    
-                    speed = 0;
-                    setTimeout(() => {
-                        if (gameState === 'playing') gameOver();
-                    }, 600);
-                    return;
-                }
-                
-                // Recycle
-                if (o.position.z > 35) {
-                    o.position.z = -130;
-                    o.position.x = lanePositions[Math.floor(Math.random() * 3)];
-                }
-            }
-            
-            // Coins
-            for (let i = coins.length - 1; i >= 0; i--) {
-                const c = coins[i];
-                c.position.z += speed * 26;
-                c.rotation.z += c.userData.rotationSpeed;
-                
-                // Magnet pull
-                if (magnetActive) {
-                    const dx = player.position.x - c.position.x;
-                    const dz = player.position.z - c.position.z;
-                    c.position.x += dx * 0.15;
-                    c.position.z += dz * 0.12;
-                }
-                
-                // Collect
-                if (Math.abs(c.position.x - player.position.x) < 2.2 &&
-                    Math.abs(c.position.z - player.position.z) < 3) {
-                    
-                    scene.remove(c);
-                    coins.splice(i, 1);
-                    score += magnetActive ? 80 : 40;   // extra with magnet
-                }
-                
-                if (c.position.z > 35) {
-                    scene.remove(c);
-                    coins.splice(i, 1);
-                }
-            }
-            
-            // Power-ups
-            for (let i = powerups.length - 1; i >= 0; i--) {
-                const p = powerups[i];
-                p.position.z += speed * 26;
-                p.rotation.y += p.userData.rotationSpeed;
-                
-                if (Math.abs(p.position.x - player.position.x) < 2.5 &&
-                    Math.abs(p.position.z - player.position.z) < 3) {
-                    
-                    // Activate shield
-                    shieldActive = true;
-                    shieldTimer = 8; // 8 seconds
-                    shieldMesh.visible = true;
-                    document.getElementById('powerup-text').textContent = 'SHIELD ACTIVATED! ✨';
-                    document.getElementById('powerup-text').style.opacity = 1;
-                    
-                    setTimeout(() => {
-                        document.getElementById('powerup-text').style.opacity = 0;
-                    }, 1800);
-                    
-                    scene.remove(p);
-                    powerups.splice(i, 1);
-                    continue;
-                }
-                
-                if (p.position.z > 35) {
-                    scene.remove(p);
-                    powerups.splice(i, 1);
-                }
-            }
-            
-            // Spawn new coins & power-ups
-            if (Math.random() < 0.028) {
-                const coin = createCoin();
-                coin.position.set(lanePositions[Math.floor(Math.random() * 3)], 3.5, -130);
-                scene.add(coin);
-                coins.push(coin);
-            }
-            
-            if (Math.random() < 0.009) {   // rare power-up
-                const pu = createPowerUp();
-                pu.position.set(lanePositions[Math.floor(Math.random() * 3)], 4, -130);
-                scene.add(pu);
-                powerups.push(pu);
-            }
-        }
-        
-        // =============== MAIN GAME LOOP ===============
-        function animate() {
-            if (gameState !== 'playing') return;
-            
-            requestAnimationFrame(animate);
-            
-            const now = Date.now();
-            const delta = (now - lastTime) / 1000;
-            lastTime = now;
-            
-            // Gentle speed increase
-            score += delta * 22;
-            speed = Math.min(speed + delta * 0.035, 0.85);
-            
-            document.getElementById('score').textContent = Math.floor(score) + ' m';
-            
-            // Timers
-            if (shieldActive) {
-                shieldTimer -= delta;
-                if (shieldTimer <= 0) {
-                    shieldActive = false;
-                    shieldMesh.visible = false;
-                }
-            }
-            
-            updatePlayer(delta);
-            updateTahmid(delta);
-            updateWorld(delta);
-            
-            // Smooth camera follow
-            camera.position.x = player.position.x * 0.35;
-            camera.position.z = player.position.z + 28;
-            camera.lookAt(player.position.x * 0.5, 5, player.position.z - 12);
-            
-            renderer.render(scene, camera);
-        }
-        
-        // =============== START THE GAME ===============
-        window.onload = init;
     </script>
+    
+    <script type="module" src="game.js"></script>
 </body>
 </html>
